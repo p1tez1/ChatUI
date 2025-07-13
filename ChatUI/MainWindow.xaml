@@ -1,0 +1,84 @@
+﻿<Window x:Class="ChatUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatUI"
+        mc:Ignorable="d"
+        Title="Chat" Height="500" Width="350">
+
+    <Window.DataContext>
+        <local:ChatViewModel/>
+    </Window.DataContext>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock VerticalAlignment="Center" Text="Login:" Margin="0,0,5,0"/>
+            <TextBox Width="100" Text="{Binding Login}"/>
+            <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="10,0,0,0"/>
+            <TextBlock Text="{Binding UserCount}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+            <TextBlock Text=" users online" VerticalAlignment="Center"/>
+        </StackPanel>
+
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Messages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Кружок ліворуч (твій) -->
+                            <Grid Grid.Column="0"
+                                Width="30" Height="30" Margin="5"
+                                Visibility="{Binding IsMine, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Ellipse Fill="LightBlue" />
+                                <TextBlock Text="{Binding User, Converter={StaticResource InitialsConverter}}"
+                                Foreground="White" FontWeight="Bold"
+                                VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Повідомлення -->
+                            <StackPanel Grid.Column="1"
+                                    HorizontalAlignment="{Binding IsMine, Converter={StaticResource AlignmentConverter}}">
+                                <Border Background="{Binding IsMine, Converter={StaticResource BubbleColorConverter}}"
+                                    CornerRadius="10" Padding="10" Margin="5">
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap"/>
+                                </Border>
+                                <TextBlock FontSize="10" HorizontalAlignment="Right"
+                           Text="{Binding Timestamp, StringFormat=HH:mm}"/>
+                            </StackPanel>
+
+                            <!-- Кружок праворуч (іншого користувача) -->
+                            <Grid Grid.Column="2"
+                                Width="30" Height="30" Margin="5"
+                                Visibility="{Binding IsMine, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <Ellipse Fill="LightGray" />
+                                <TextBlock Text="{Binding User, Converter={StaticResource InitialsConverter}}"
+                           Foreground="Black" FontWeight="Bold"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+
+            </ItemsControl>
+        </ScrollViewer>
+
+
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,0">
+            <TextBox Width="230" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="10,0,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>
