@@ -1,7 +1,10 @@
 ﻿using ChatUI.Models;
+using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows.Input;
 
 namespace ChatUI
@@ -55,9 +58,54 @@ namespace ChatUI
             _chatService.UserCountUpdated -= OnUserCountUpdated;
             _chatService.UserCountUpdated += OnUserCountUpdated;
 
-            await _chatService.Connect(Login);
-            _isConnected = true;
+            try
+            {
+                using var client = new HttpClient();
+                var response = await client.PostAsync("http://localhost:5000/auth/login",
+                    new StringContent($"{{ \"userName\": \"{Login}\" }}", Encoding.UTF8, "application/json"));
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Messages.Add(new MessageModel
+                    {
+                        User = "System",
+                        Text = $"Не вдалося увійти: {response.StatusCode}",
+                        Timestamp = DateTime.Now,
+                        IsMine = false
+                    });
+                    return;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var jwt = JObject.Parse(json)["token"]?.ToString();
+
+                if (string.IsNullOrWhiteSpace(jwt))
+                {
+                    Messages.Add(new MessageModel
+                    {
+                        User = "System",
+                        Text = $"Сервер не повернув токен.",
+                        Timestamp = DateTime.Now,
+                        IsMine = false
+                    });
+                    return;
+                }
+
+                await _chatService.Connect(Login, jwt);
+                _isConnected = true;
+            }
+            catch (Exception ex)
+            {
+                Messages.Add(new MessageModel
+                {
+                    User = "System",
+                    Text = $"Помилка: {ex.Message}",
+                    Timestamp = DateTime.Now,
+                    IsMine = false
+                });
+            }
         }
+
 
         private async void SendMessage()
         {

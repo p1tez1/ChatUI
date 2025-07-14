@@ -3,16 +3,18 @@
 public class ChatService
 {
     private HubConnection _connection;
+    private string _systemUserName = "System";
 
     public event Action<string, string> MessageReceived;
     public event Action<int> UserCountUpdated;
 
-    private readonly string _systemUserName = "System";
-
-    public async Task Connect(string username)
+    public async Task Connect(string username, string jwtToken)
     {
         _connection = new HubConnectionBuilder()
-            .WithUrl($"http://localhost:5000/chathub?user={username}")
+            .WithUrl("http://localhost:5000/chathub", options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult(jwtToken);
+            })
             .WithAutomaticReconnect()
             .Build();
 
@@ -50,13 +52,10 @@ public class ChatService
 
     public async Task SendSystemMessage(string message)
     {
-        if (_connection != null && _connection.State == HubConnectionState.Connected)
-        {
+        if (_connection?.State == HubConnectionState.Connected)
             await _connection.InvokeAsync("SendMessage", _systemUserName, message);
-        }
         else
-        {
             MessageReceived?.Invoke(_systemUserName, message);
-        }
     }
 }
+
